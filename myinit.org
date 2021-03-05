@@ -1,0 +1,400 @@
+#+STARTUP: overview
+* use-package
+#+BEGIN_SRC emacs-lisp
+  (require 'use-package)
+#+END_SRC
+* f
+#+BEGIN_SRC emacs-lisp
+  (use-package f
+    :ensure t)
+#+END_SRC
+* freing keys
+#+BEGIN_SRC emacs-lisp
+(global-unset-key (kbd "C-z"))      ;; suspend-emacs
+;;(global-unset-key (kbd "C-q"))      ;; quoted-insert
+(global-unset-key (kbd "C-x C-r"))  ;; ido-find-file-read-only
+(global-unset-key (kbd "C-t"))      ;; transpose-chars
+(global-unset-key (kbd "M-c"))      ;; capitalize-word  - often pressed by mistake
+(global-unset-key (kbd "s-n"))      ;; make-frame - annoying
+
+#+END_SRC
+* theme
+#+BEGIN_SRC emacs-lisp
+  (use-package solarized-theme
+    :ensure t
+    :config
+    (load-theme 'solarized-light t)
+    (let ((line (face-attribute 'mode-line :underline)))
+      (set-face-attribute 'mode-line          nil :overline   line)
+      (set-face-attribute 'mode-line-inactive nil :overline   line)
+      (set-face-attribute 'mode-line-inactive nil :underline  line)
+      (set-face-attribute 'mode-line          nil :box        nil)
+      (set-face-attribute 'mode-line-inactive nil :box        nil)
+      (set-face-attribute 'mode-line-inactive nil :background "#f9f2d9")))
+  (use-package moody
+    :ensure t
+    :config
+    (setq x-underline-at-descent-line t)
+    (moody-replace-mode-line-buffer-identification)
+    (moody-replace-vc-mode))
+#+END_SRC
+* mac specific settings
+#+BEGIN_SRC emacs-lisp
+  (when (eq system-type 'darwin) 
+    (setq mac-option-modifier 'meta)
+    (setq mac-command-modifier 'super)
+    (global-set-key [kp-delete] 'delete-char) ;; sets fn-delete to be right-delete
+    ;; prevent git complainig about /usr/X11R6/bin/ssh-askpass (requires https://github.com/theseal/ssh-askpass)
+    (setenv "GIT_ASKPASS" "/usr/local/bin/ssh-askpass"))
+  #+END_SRC
+* core tweaks
+#+BEGIN_SRC emacs-lisp
+  (use-package emacs
+    :ensure t
+    :config
+    (tool-bar-mode -1)
+    (setq whitespace-style '(face tabs tab-mark trailing))
+    (global-font-lock-mode 1)
+    (setq show-trailing-whitespace t)
+    (setq ac-auto-show-menu 0.3)
+    (setq split-width-threshold 9999)
+    (setq inhibit-startup-screen t)
+    (setq initial-scratch-message nil)
+    ;; log recent files (recentf-open-files will list them all)
+    (recentf-mode t)
+    (setq-default recentf-save-file (locate-user-emacs-file "data/recentf"))
+    ;; highlight current line
+    (global-hl-line-mode t)
+    ;; save minibuffer history
+    (savehist-mode 1)
+    (setq-default savehist-file (locate-user-emacs-file "data/minibuffer.history"))
+    ;; make indentation commands use space only (never tab character)
+    (setq-default indent-tabs-mode nil)
+    ;; set default tab char's display width to 4 spaces
+    (setq-default tab-width 4)
+    ;; Show column numbers
+    (column-number-mode t)
+    ;; And matching parens
+    (show-paren-mode t)
+
+    ;; Disable the alarm
+    (setq ring-bell-function 'ignore))
+#+END_SRC
+* paths
+** backups
+#+BEGIN_SRC emacs-lisp
+  (use-package files
+    :custom
+    (backup-directory-alist
+     `(("." . ,(locate-user-emacs-file "data/backups"))))
+    (auto-save-file-name-transforms
+     `((".*" ,(locate-user-emacs-file "data/backups") t)))
+    (auto-save-list-file-prefix
+     (locate-user-emacs-file "data/backups/")))
+#+END_SRC
+** custom
+#+BEGIN_SRC emacs-lisp
+  (use-package cus-edit
+    :after files
+    :config
+    (setf custom-file (locate-user-emacs-file "custom.el"))
+    (add-hook 'after-init-hook
+              (lambda () (load custom-file t))))
+#+END_SRC
+* editing
+** kill more kill better
+#+BEGIN_SRC emacs-lisp
+    (global-set-key (kbd "C-k") 'kill-whole-line)
+    (global-set-key (kbd "C-S-k") 'kill-line)
+    (global-set-key (kbd "s-k") 'kill-this-buffer)
+    (global-set-key (kbd "s-s") 'save-buffer)
+#+END_SRC
+** treat underscore as a part of a word (in code)
+Changing underscore to part of a word globally affects highlighting in
+text modes which leads to hiccups in message-mode. I only need
+"underscore as word" for code where I usually use snake_case
+identifiers.
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'prog-mode-hook
+            (lambda () (modify-syntax-entry ?_ "w")))
+#+END_SRC
+** paren config
+#+BEGIN_SRC emacs-lisp
+  (use-package paren
+    :config
+    (setq blink-matching-paren-distance nil)
+    (setq show-paren-style 'mixed))
+#+END_SRC
+* org
+** modules
+#+NAME: my-org-modules
+*** agenda custom
+#+NAME: agenda-custom
+#+BEGIN_SRC emacs-lisp :tangle no
+  (org-agenda-dim-blocked-tasks t)
+  (org-agenda-files (locate-user-emacs-file "agenda.list"))
+  (org-agenda-span 1)
+  (org-agenda-todo-list-sublevels nil)
+  (org-sort-agenda-notime-is-late nil)
+  (org-agenda-tags-todo-honor-ignore-options t)
+  (org-agenda-custom-commands
+   '(("d" "Undated tasks" alltodo ""
+      ((org-agenda-todo-ignore-with-date t)
+       (org-agenda-files (seq-remove
+                          (lambda (file) (cl-search "mylife" file))
+                          (org-agenda-files nil 'ifmode)))))
+     ("t" . "Tree")
+     ("tn" "Next" occur-tree "TODO.*:next:")
+     ("tw" "Waiting" occur-tree "TODO.*:waiting:")
+     ("ts" "Someday" occur-tree "TODO.*:someday:")
+     ("o" "Overview"
+      ((tags-todo "next"
+                  ((org-agenda-overriding-header "Next")
+                   (org-agenda-todo-ignore-scheduled 'future)))
+       (tags-todo "calendar"
+                  ((org-agenda-overriding-header "Calendar")
+                   (org-agenda-todo-ignore-scheduled 'future)))
+       (tags-todo "tickler"
+                  ((org-agenda-overriding-header "Tickler")
+                   (org-agenda-todo-ignore-scheduled 'future)))
+       (agenda)))
+     ("w" "Waiting" tags-todo "+waiting"
+      ((org-agenda-todo-ignore-scheduled 'future)))
+     ("s" "Someday" tags-todo "+someday")
+     ("F" "Non-future" tags ""
+      ((org-agenda-todo-ignore-scheduled 'future)))
+     ("n" . "Next")
+     ("nn" "Next" tags-todo "+next"
+      ((org-agenda-todo-ignore-scheduled 'future)))
+     ("nc" "Next - computer" tags-todo "+next+@computer"
+      ((org-agenda-todo-ignore-scheduled 'future)))
+     ("nh" "Next - home" tags-todo "+next+@home"
+      ((org-agenda-todo-ignore-scheduled 'future)))
+     ("nt" "Next - Topcon" tags-todo "+next+@topcon"
+      ((org-agenda-todo-ignore-scheduled 'future)))))
+#+END_SRC
+** bind
+#+NAME: org-bind-keys
+#+BEGIN_SRC emacs-lisp :tangle no
+  (("C-c l" . org-store-link)
+   ("C-c a" . org-agenda)
+   ("C-c c" . org-capture))
+#+END_SRC
+** after init hook
+There is some issue with startup-indented that requires org-reload
+#+name: org-after-init
+#+begin_src emacs-lisp :tangle no
+  (setq org-startup-indented t)
+  (org-reload)
+  (define-key org-mode-map (kbd "<C-tab>") 'vimacs/org-narrow-to-subtree)
+  (define-key org-mode-map (kbd "<M-tab>") 'vimacs/org-widen-from-subtree)
+#+end_src
+** use package
+#+BEGIN_SRC emacs-lisp :noweb yes
+  (use-package org
+    :ensure org-plus-contrib
+    :bind
+    <<org-bind-keys>>
+    :mode ("\\.\\(org\\|org_archive\\|txt\\)$" . org-mode)
+    :init
+    (add-hook 'after-init-hook (defun org-after-init ()
+                                 <<org-after-init>>))
+    <<my-org-modules>>
+    :config
+    (add-to-list 'org-todo-keyword-faces
+                 '("CANCELLED" . (:foreground "blue" :weight bold)))
+    (org-load-modules-maybe t)
+    (unbind-key "C-'" org-mode-map) ; Free this one for avy
+    :custom
+    <<agenda-custom>>
+    (org-use-sub-superscripts nil)
+    (org-blank-before-new-entry '((heading . nil) (plain-list-item . nil)))
+    (org-confirm-babel-evaluate nil)
+    (org-enforce-todo-dependencies t)
+    (org-extend-today-until 3)
+    (org-hide-leading-stars t)
+    (org-log-into-drawer "LOGBOOK")
+    (org-outline-path-complete-in-steps nil)
+    (org-refile-use-outline-path 'file)
+    (org-archive-location "archive/%s::")
+    (org-hide-blocks-startup t)
+    (org-refile-targets
+     '((nil :maxlevel . 3)
+       (org-agenda-files :maxlevel . 3)))
+    :custom-face
+    (org-mode-line-clock ((t (:background "grey75" :foreground "red" :box (:line-width -1 :style released-button))))))
+#+END_SRC
+** calendar
+#+BEGIN_SRC emacs-lisp
+  (use-package calendar
+    :ensure nil
+    :commands (calendar)
+    :custom (calendar-week-start-day 1))
+#+END_SRC
+
+** slimhtml
+#+BEGIN_SRC emacs-lisp
+  (use-package ox-slimhtml
+    :ensure t
+    :after org)
+#+END_SRC
+** checklist
+#+BEGIN_SRC emacs-lisp
+  (require 'org-checklist)
+#+END_SRC
+** auto-close archive
+Automatically close archive file after archiving a subtree
+Unless it was open before archiving
+#+BEGIN_SRC emacs-lisp
+  (defun aragaer/auto-close-archive (orig-func &rest r)
+    (let* ((location (org-archive--compute-location org-archive-location))
+           (afile (car location))
+           (abuffer (get-file-buffer afile)))
+      (apply orig-func r)
+      (when (not abuffer)
+        (let ((abuffer (get-file-buffer afile)))
+          (save-some-buffers t abuffer)
+          (kill-buffer abuffer)))))
+
+  (advice-add 'org-archive-subtree :around #'aragaer/auto-close-archive)
+#+END_SRC
+* utils
+** which-key
+#+BEGIN_SRC emacs-lisp
+  (use-package which-key
+    :ensure t
+    :config
+    (which-key-mode))
+#+END_SRC
+** vdiff
+#+BEGIN_SRC emacs-lisp
+  (use-package vdiff
+    :ensure t
+    :custom
+    (vdiff-truncate-lines t)
+    :config
+    (define-key vdiff-mode-map (kbd "C-c") vdiff-mode-prefix-map))
+
+#+END_SRC
+** ivy
+#+BEGIN_SRC emacs-lisp
+    (use-package ivy
+      :ensure t
+      :config
+      (ivy-mode t)
+      (setq ivy-use-virtual-buffers t)
+      (setq ivy-count-format "(%d/%d) "))
+#+END_SRC
+** reverse-im
+#+BEGIN_SRC emacs-lisp
+  (use-package reverse-im
+    :ensure t
+    :demand t
+    :bind
+    ("M-T" . reverse-im-translate-word)
+    :custom
+    (reverse-im-char-fold t)
+    (reverse-im-read-char-advice-function #'reverse-im-read-char-include)
+    (reverse-im-input-methods '("russian-computer"))
+    :config
+    (reverse-im-mode t))
+#+END_SRC
+** projectile
+#+BEGIN_SRC emacs-lisp
+  (use-package projectile
+    :ensure t
+    :custom
+    (projectile-completion-system 'ivy)
+    :config
+    (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+    (add-to-list 'projectile-globally-ignored-directories ".venv")
+    (projectile-mode +1))
+#+END_SRC
+** magit
+#+BEGIN_SRC emacs-lisp
+  (use-package magit
+    :ensure t
+    :bind (("s-m" . magit-status))
+    :custom
+    (magit-log-margin '(t age-abbreviated magit-log-margin-width t 7))
+    :init
+    (require 'magit-git)
+    (require 'magit-process))
+#+END_SRC
+
+* helpers
+** epa-file
+#+BEGIN_SRC emacs-lisp
+  (use-package epa-file
+    :config (epa-file-enable))
+#+END_SRC
+** hledger
+#+BEGIN_SRC emacs-lisp
+  (defun hledger-account-read ()
+    (interactive)
+    (insert (completing-read
+             "account: " (split-string (shell-command-to-string "hledger a") "\n" t)))
+    (insert "  "))
+#+END_SRC
+* modes
+** olivetti
+#+BEGIN_SRC emacs-lisp
+  (use-package olivetti
+    :ensure t)
+#+END_SRC
+** feature-mode
+#+BEGIN_SRC emacs-lisp
+  (use-package feature-mode
+    :ensure t)
+#+END_SRC
+** my-writing-mode
+#+BEGIN_SRC emacs-lisp
+  (define-derived-mode my-writing-mode org-mode "my-writing"
+    (setq olivetti-body-width 80)
+    (olivetti-mode t))
+#+END_SRC
+** hooks
+*** prog-mode
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'prog-mode-hook 'whitespace-mode)
+#+END_SRC
+*** golang
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'go-mode-hook '(lambda ()
+                             (setq indent-tabs-mode t)
+                             (setq tab-width 4)))
+#+END_SRC
+*** changelog
+#+BEGIN_SRC emacs-lisp
+  (rassq-delete-all 'change-log-mode auto-mode-alist)
+#+END_SRC
+* load local settings
+#+BEGIN_SRC emacs-lisp
+  (let ((local-settings-file (locate-user-emacs-file "local_settings.el")))
+    (if (file-exists-p local-settings-file)
+        (load local-settings-file)))
+  (let ((local-org-settings-file (locate-user-emacs-file "local.org")))
+    (if (file-exists-p local-org-settings-file)
+        (org-babel-load-file local-org-settings-file)))
+#+END_SRC
+* stuff
+** auto revert
+#+BEGIN_SRC emacs-lisp
+  (global-auto-revert-mode t)
+#+END_SRC
+** undo tree
+#+BEGIN_SRC emacs-lisp
+  (use-package undo-tree
+    :ensure t
+    :custom
+    (global-undo-tree-mode t))
+#+END_SRC
+** indent tabs
+#+BEGIN_SRC emacs-lisp
+  (setq-default indent-tabs-mode nil)
+#+END_SRC
+** narrow commands
+#+BEGIN_SRC emacs-lisp
+  (put 'narrow-to-region 'disabled nil)
+  (put 'narrow-to-page 'disabled nil)
+#+END_SRC
