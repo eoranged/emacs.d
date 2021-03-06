@@ -8,14 +8,20 @@
   (use-package f
     :ensure t)
 #+END_SRC
+
 * freing keys
 #+BEGIN_SRC emacs-lisp
-(global-unset-key (kbd "C-z"))      ;; suspend-emacs
-;;(global-unset-key (kbd "C-q"))      ;; quoted-insert
-(global-unset-key (kbd "C-x C-r"))  ;; ido-find-file-read-only
-(global-unset-key (kbd "C-t"))      ;; transpose-chars
-(global-unset-key (kbd "M-c"))      ;; capitalize-word  - often pressed by mistake
-(global-unset-key (kbd "s-n"))      ;; make-frame - annoying
+  (global-unset-key (kbd "C-z"))      ;; suspend-emacs
+  ;; (global-unset-key (kbd "C-x C-r"))  ;; ido-find-file-read-only
+  (global-unset-key (kbd "C-t"))      ;; transpose-chars
+  (global-unset-key (kbd "M-c"))      ;; capitalize-word  - often pressed by mistake
+  (global-unset-key (kbd "s-n"))      ;; make-frame - annoying
+
+#+END_SRC
+* global navigation
+#+BEGIN_SRC emacs-lisp
+  (global-set-key (kbd "s-b") 'ivy-switch-buffer)
+  (global-set-key (kbd "s-n") 'shell)  ;; TODO open per-project shell
 
 #+END_SRC
 * theme
@@ -40,7 +46,7 @@
 #+END_SRC
 * mac specific settings
 #+BEGIN_SRC emacs-lisp
-  (when (eq system-type 'darwin) 
+  (when (eq system-type 'darwin)
     (setq mac-option-modifier 'meta)
     (setq mac-command-modifier 'super)
     (global-set-key [kp-delete] 'delete-char) ;; sets fn-delete to be right-delete
@@ -62,12 +68,12 @@
     (setq initial-scratch-message nil)
     ;; log recent files (recentf-open-files will list them all)
     (recentf-mode t)
-    (setq-default recentf-save-file (locate-user-emacs-file "data/recentf"))
+    ;; (setq-default recentf-save-file (locate-user-emacs-file "data/recentf"))
     ;; highlight current line
     (global-hl-line-mode t)
     ;; save minibuffer history
     (savehist-mode 1)
-    (setq-default savehist-file (locate-user-emacs-file "data/minibuffer.history"))
+    ;; (setq-default savehist-file (locate-user-emacs-file "data/minibuffer.history"))
     ;; make indentation commands use space only (never tab character)
     (setq-default indent-tabs-mode nil)
     ;; set default tab char's display width to 4 spaces
@@ -82,15 +88,16 @@
 #+END_SRC
 * paths
 ** backups
+TODO review if needed
 #+BEGIN_SRC emacs-lisp
-  (use-package files
-    :custom
-    (backup-directory-alist
-     `(("." . ,(locate-user-emacs-file "data/backups"))))
-    (auto-save-file-name-transforms
-     `((".*" ,(locate-user-emacs-file "data/backups") t)))
-    (auto-save-list-file-prefix
-     (locate-user-emacs-file "data/backups/")))
+  ;; (use-package files
+  ;;   :custom
+  ;;   (backup-directory-alist
+  ;;    `(("." . ,(locate-user-emacs-file "data/backups"))))
+  ;;   (auto-save-file-name-transforms
+  ;;    `((".*" ,(locate-user-emacs-file "data/backups") t)))
+  ;;   (auto-save-list-file-prefix
+  ;;    (locate-user-emacs-file "data/backups/")))
 #+END_SRC
 ** custom
 #+BEGIN_SRC emacs-lisp
@@ -186,8 +193,6 @@ There is some issue with startup-indented that requires org-reload
 #+begin_src emacs-lisp :tangle no
   (setq org-startup-indented t)
   (org-reload)
-  (define-key org-mode-map (kbd "<C-tab>") 'vimacs/org-narrow-to-subtree)
-  (define-key org-mode-map (kbd "<M-tab>") 'vimacs/org-widen-from-subtree)
 #+end_src
 ** use package
 #+BEGIN_SRC emacs-lisp :noweb yes
@@ -383,9 +388,11 @@ Unless it was open before archiving
   (global-auto-revert-mode t)
 #+END_SRC
 ** undo tree
+https://github.com/apchamberlain/undo-tree.el
 #+BEGIN_SRC emacs-lisp
   (use-package undo-tree
     :ensure t
+    :diminish t
     :custom
     (global-undo-tree-mode t))
 #+END_SRC
