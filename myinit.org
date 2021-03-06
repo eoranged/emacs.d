@@ -82,7 +82,8 @@
     (column-number-mode t)
     ;; And matching parens
     (show-paren-mode t)
-
+    ;; answer y or n
+    (defalias 'yes-or-no-p 'y-or-n-p)
     ;; Disable the alarm
     (setq ring-bell-function 'ignore))
 #+END_SRC
