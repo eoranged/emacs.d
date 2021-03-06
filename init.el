@@ -9,16 +9,26 @@
 
 (require 'package)
 
+;; Should be done as early as possible
+(when (package-installed-p 'no-littering)
+  (require 'no-littering))
+
 (setq package-archives
       '(("gnu" . "http://elpa.gnu.org/packages/")
         ("marmalade" . "https://marmalade-repo.org/packages/")
-        ("melpa" . "http://melpa.org/packages/")
+        ;;("melpa" . "http://melpa.org/packages/")
         ("org" . "http://orgmode.org/elpa/")
         ("melpa-stable" . "http://stable.melpa.org/packages/")))
 
 (package-initialize)
 
-(when (not (package-installed-p 'use-package))
+;; make sure that all data is placed properly
+(unless (package-installed-p 'no-littering)
+  (package-refresh-contents)
+  (package-install 'no-littering)
+  (require 'no-littering))
+
+(unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
 
