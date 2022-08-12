@@ -385,6 +385,11 @@ Unless it was open before archiving
 #+BEGIN_SRC emacs-lisp
   (rassq-delete-all 'change-log-mode auto-mode-alist)
 #+END_SRC
+** yaml
+#+BEGIN_SRC emacs-lisp
+    (use-package yaml-mode
+      :ensure t)
+#+END_SRC
 * load local settings
 #+BEGIN_SRC emacs-lisp
   (let ((local-settings-file (locate-user-emacs-file "local_settings.el")))
