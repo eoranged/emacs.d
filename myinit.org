@@ -223,10 +223,10 @@ There is some issue with startup-indented that requires org-reload
   (setq org-startup-indented t)
   (org-reload)
 #+end_src
-** use package
+** use package - figure out what's with org-plus-contrib :TODO:
 #+BEGIN_SRC emacs-lisp :noweb yes
   (use-package org
-    :ensure org-plus-contrib
+    ;; :ensure org-plus-contrib
     :bind
     <<org-bind-keys>>
     :mode ("\\.\\(org\\|org_archive\\|txt\\)$" . org-mode)
@@ -266,15 +266,15 @@ There is some issue with startup-indented that requires org-reload
     :custom (calendar-week-start-day 1))
 #+END_SRC
 
-** slimhtml
+** slimhtml - investigate what is it and how to replace               :TODO:
 #+BEGIN_SRC emacs-lisp
-  (use-package ox-slimhtml
-    :ensure t
-    :after org)
+  ;;(use-package ox-slimhtml
+  ;;  :ensure t
+  ;;  :after org)
 #+END_SRC
-** checklist
+** checklist - investigate what is it and how to replace  :TODO:
 #+BEGIN_SRC emacs-lisp
-  (require 'org-checklist)
+  ;;(require 'org-checklist)
 #+END_SRC
 ** auto-close archive
 Automatically close archive file after archiving a subtree

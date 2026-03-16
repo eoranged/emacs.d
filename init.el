@@ -7,6 +7,10 @@
      (message "Emacs ready in %.2f seconds with %d garbage collections." startup-time gcs-done))
    (setq gc-cons-threshold old-gc-cons-threshold)))
 
+;; silence straigth warning - investigate :TODO:
+;; see https://github.com/radian-software/straight.el/pull/1220
+(setq straight-package--warning-displayed t)
+
 (require 'package)
 
 ;; Should be done as early as possible
@@ -14,10 +18,10 @@
   (require 'no-littering))
 
 (setq package-archives
-      '(("gnu" . "http://elpa.gnu.org/packages/")
+      '(("gnu" . "https://elpa.gnu.org/packages/")
         ;;("melpa" . "http://melpa.org/packages/")
-        ("org" . "http://orgmode.org/elpa/")
-        ("melpa-stable" . "http://stable.melpa.org/packages/")))
+        ;;("org" . "https://orgmode.org/elpa/")
+        ("melpa-stable" . "https://stable.melpa.org/packages/")))
 
 (package-initialize)
 
