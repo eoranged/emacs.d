@@ -113,7 +113,12 @@ Call function without confirmation. See https://www.emacswiki.org/emacs/YesOrNoP
     ;; answer y or n
     (defalias 'yes-or-no-p 'y-or-n-p)
     ;; Disable the alarm
-    (setq ring-bell-function 'ignore))
+    (setq ring-bell-function 'ignore)
+    ;; Increase buffer size for read process to speed up language server
+    (setq read-process-output-max (* 1024 1024)) ;; 1mb
+    ;; Call GC for every 100mb of garbage to speed up language server
+    (setq gc-cons-threshold 100000000)
+    )
 #+END_SRC
 * paths
 ** backups
@@ -161,6 +166,50 @@ identifiers.
     (setq blink-matching-paren-distance nil)
     (setq show-paren-style 'mixed))
 #+END_SRC
+* language server
+** lsp-mode
+https://emacs-lsp.github.io/lsp-mode/page/installation/#vanilla-emacs
+#+BEGIN_SRC emacs-lisp
+  (use-package lsp-mode
+    :ensure t
+    :straight
+    (lsp-mode :type git :host github :repo "emacs-lsp/lsp-mode")
+
+    :after which-key
+    :init
+    ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+    (setq lsp-keymap-prefix "s-l")
+    :hook (
+           ;; if you want which-key integration
+           (lsp-mode . lsp-enable-which-key-integration))
+    :commands lsp)
+
+  ;; optionally
+  (use-package lsp-ui
+    :ensure t
+    :after lsp-mode
+    :ensure t
+    :commands lsp-ui-mode)
+  ;; if you are ivy user
+  (use-package lsp-ivy
+    :ensure t
+    :after (lsp-mode ivy)
+    :ensure t
+    :commands lsp-ivy-workspace-symbol)
+
+  (use-package lsp-treemacs
+    :ensure t
+    :commands lsp-treemacs-errors-list)
+
+  ;; optionally if you want to use debugger
+  ;;(use-package dap-mode
+  ;;  :ensure t)
+  ;; (use-package dap-LANGUAGE) to load the dap adapter for your language
+
+#+END_SRC
+
+#+RESULTS:
+
 * org
 ** modules
 #+NAME: my-org-modules
@@ -229,7 +278,7 @@ There is some issue with startup-indented that requires org-reload
     ;; :ensure org-plus-contrib
     :bind
     <<org-bind-keys>>
-    :mode ("\\.\\(org\\|org_archive\\|txt\\)$" . org-mode)
+    :mode ("\\.\\(org\\|org_archive\\)$" . org-mode)
     :init
     (add-hook 'after-init-hook (defun org-after-init ()
                                  <<org-after-init>>))
@@ -258,6 +307,10 @@ There is some issue with startup-indented that requires org-reload
     :custom-face
     (org-mode-line-clock ((t (:background "grey75" :foreground "red" :box (:line-width -1 :style released-button))))))
 #+END_SRC
+
+#+RESULTS:
+: org-capture
+
 ** calendar
 #+BEGIN_SRC emacs-lisp
   (use-package calendar
@@ -380,6 +433,11 @@ Unless it was open before archiving
 (use-package ag
 :ensure t
 )
+** try
+#+BEGIN_SRC emacs-lisp
+  (use-package try
+    :ensure t)
+#+END_SRC
 
 * helpers
 ** epa-file
@@ -501,11 +559,6 @@ Unless it was open before archiving
   (use-package olivetti
     :ensure t)
 #+END_SRC
-** feature-mode
-#+BEGIN_SRC emacs-lisp
-  (use-package feature-mode
-    :ensure t)
-#+END_SRC
 ** my-writing-mode
 #+BEGIN_SRC emacs-lisp
   (define-derived-mode my-writing-mode org-mode "my-writing"
@@ -532,6 +585,25 @@ Unless it was open before archiving
     (use-package yaml-mode
       :ensure t)
 #+END_SRC
+** haskell
+#+BEGIN_SRC emacs-lisp
+  (use-package haskell-mode
+    :ensure t
+    :after lsp-mode
+    :hook ((haskell-mode . lsp)
+           (haskell-literate-mode . lsp))
+    :config
+    (setq haskell-tags-on-save t)
+    )
+  (use-package lsp-haskell
+    :ensure t
+    :straight
+    (lsp-haskell :type git :host github :repo "emacs-lsp/lsp-haskell")
+    :after (lsp-mode haskell-mode))
+#+END_SRC
+
+#+RESULTS:
+
 * load local settings
 #+BEGIN_SRC emacs-lisp
   (let ((local-settings-file (locate-user-emacs-file "local_settings.el")))

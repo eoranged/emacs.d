@@ -17,6 +17,11 @@
 (when (package-installed-p 'no-littering)
   (require 'no-littering))
 
+;; Proper paths on mac
+(when (eq system-type 'darwin)
+  (setenv "PATH"
+          (concat "/opt/homebrew/bin" ":" (expand-file-name "~/.cabal/bin") ":" (getenv "PATH"))))
+
 (setq package-archives
       '(("gnu" . "https://elpa.gnu.org/packages/")
         ;;("melpa" . "http://melpa.org/packages/")
